@@ -1,6 +1,6 @@
 library(plyr)
 mammals <- read.csv("data-raw/mammals.csv", na.strings="")
-
+range(mammals$mass.grams)
 # Carry out the following inspections of the data
 # 
 # Use the head function to view the first few lines of the data frame on the screen. 
@@ -144,27 +144,40 @@ lines(dnorm(xpts, mean=m, sd=s) ~ xpts, col="red", lwd=2)
 # or smaller than, extant mammals? (You may need to use the cex.axis option to shrink the labels
 # so that they all fit on the graph).
 
+boxplot(mammals$log.mass.grams ~ mammals$status)
+# Extinct mammals are larger than extant mammals. 
 
 # 2. Examine the previous box plot. How do the shapes of the body size distributions 
 # compare between extinct and extant mammals?
 
+hist(mammals$log.mass.grams[mammals$status == "extant"]) # positive skew
+hist(mammals$log.mass.grams[mammals$status == "extinct"]) # negative skew
 
 # 3. Redo the previous box plot but make box width proportional to the square root of sample size. 
 # Add a title to the plot.
 
+boxplot(mammals$log.mass.grams ~ mammals$status, varwidth = TRUE, main = "Body sizes by status")
 
 # 4. Use the tapply command to calculate the median log body mass of each extinction-status group of mammals. 
 # Check that these are consistent with the box plot results.
+
+tapply(mammals$log.mass.grams, mammals$status, FUN = median, na.rm = TRUE)
+
 
 # 5. Calculate the mean of log body mass of each extinction-status mammal group. 
 # Why is the mean log size of extant mammals larger than the median, but the mean log size for 
 # extinct mammals smaller than the median?
 
+tapply(mammals$log.mass.grams, mammals$status, FUN = mean, na.rm = TRUE)
+# because of #2 above. 
 
 # 6. Create a two-way frequency table (contingency table) describing the frequencies of mammal 
 # species in different extinction status groups on different continents. Which continent has seen the most extinctions? 
 # Which continent has the greatest number of extinctions relative to the number of extant species?
 
+table(mammals$status, mammals$continent)
+# Most extinctions: North America
+# Most extinctions relative to extant species: Australia
 
 # 7. Draw a mosaic plot illustrating the relative frequencies of mammal species in different extinction status 
 # groups on different continents. Try switching the order of the variables in the mosaicplot command to change the 
@@ -172,3 +185,164 @@ lines(dnorm(xpts, mean=m, sd=s) ~ xpts, col="red", lwd=2)
 # total numbers of species? (A mosaic plot is perhaps not ideal for these data because the frequencies are so small 
 # for some categories, such as “introduction”. In this case R also has difficulties squeezing in the labels. 
 # Perhaps this is a case in which a table is superior to a graph.)
+
+mosaicplot(table(mammals$status, mammals$continent), color = terrain.colors(7), las = 2, cex.axis = 0.8)
+mosaicplot(table(mammals$continent, mammals$status), color = terrain.colors(7), las = 2, cex.axis = 0.8)
+
+# Australia.
+
+
+#### Visualizing associations between variables #### 
+
+fruitflies <- read.csv("data-raw/fruitflies.csv")
+
+# 1. View the first few lines of the data frame on the screen, and familiarize yourself with the variable names.
+
+head(fruitflies)
+
+# 2. Use a box plot to examine the distribution of longevities in the treatment groups. Add a label to the y axis.
+# Do the treatment groups differ in longevities? Describe the pattern of differences between treatments.
+
+boxplot(fruitflies$longevity.days ~ fruitflies$treatment, 
+        las = 2, 
+        cex.axis = 0.7, 
+        ylab = "longevity (days)")
+# The treatment "8 virgin females" differs from the other treatment types. The others are all very similar. 
+
+# 3. Use a strip chart to examine the distribution of longevities in the treatment groups. Try the jitter method 
+# to reduce overlap between points. Adjust the treatment label sizes so that they all fit on the graph. 
+# Rotate the labels on the y axis to horizontal. Compare with the box plot results. Which is more revealing?
+?mfrow
+
+par(mfrow = c(2,1))
+stripchart(fruitflies$longevity.days ~ fruitflies$treatment, 
+           method = "jitter", 
+           vertical = TRUE, 
+           cex.axis = 0.8, 
+           las = 1)
+
+boxplot(fruitflies$longevity.days ~ fruitflies$treatment, 
+        las = 2, 
+        cex.axis = 0.7, 
+        ylab = "longevity (days)")
+
+
+# 4. The variable “thorax” stands for thorax length, which was used as a measure of body size. The measurement 
+# was included in case body size also affected longevity. Produce a scatter plot of thorax length and longevity. 
+# Make “longevity” the response variable (i.e., plot it on the vertical axis). Is there a relationship?
+
+par(mfrow = c(1,1))
+plot(fruitflies$longevity.days ~ fruitflies$thorax.mm)
+
+# 5. Use the lowess smoother to draw a smooth curve through the scatter plot of longevity on thorax length.
+
+x1 <- fruitflies$thorax.mm[order(fruitflies$thorax.mm)]
+y1 <- fruitflies$longevity.days[order(fruitflies$longevity.days)]
+
+lines(lowess(x1, y1, f = 0.5))
+
+# 6. Redraw the scatter plot but this time use different symbols or colors for the different treatment groups. 
+# Add a legend to identify the symbols. Describe the pattern of differences between treatments.
+
+plot(fruitflies$longevity.days ~ fruitflies$thorax.mm, col = fruitflies$treatment, pch = 16)
+lines(lowess(x1, y1, f = 0.5), lwd = 2)
+unique(fruitflies$treatment)
+
+range(fruitflies$longevity.days) # 16 tp 97
+range(fruitflies$thorax.mm) # 0.64 to 0.94
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "1 pregnant female"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "1 pregnant female"],
+     pch = 16,
+     col = "blue", 
+     ylim = c(0, 100), 
+     xlim = c(0.64, 0.95))
+
+points(fruitflies$longevity.days[fruitflies$treatment == "1 virgin female"] ~ 
+         fruitflies$thorax.mm[fruitflies$treatment == "1 virgin female"],
+       pch = 16, 
+       col = "red")
+
+points(fruitflies$longevity.days[fruitflies$treatment == "8 pregnant females"] ~ 
+         fruitflies$thorax.mm[fruitflies$treatment == "8 pregnant females"], 
+       pch = 16, 
+       col = "green")
+
+points(fruitflies$longevity.days[fruitflies$treatment == "8 virgin females"] ~ 
+         fruitflies$thorax.mm[fruitflies$treatment == "8 virgin females"],
+       pch = 16,
+       col = "purple")
+
+points(fruitflies$longevity.days[fruitflies$treatment == "no females added"] ~ 
+         fruitflies$thorax.mm[fruitflies$treatment == "no females added"], 
+       pch = 16, 
+       col = "black")
+
+lines(lowess(x1, y1, f = 0.5), lwd = 2)
+
+legend("topleft",
+       c("1 pregnant female", "1 virgin female", "8 pregnant females", "8 virgin females", "no females added"), 
+       col = c("blue", "red", "green", "purple", "black"),
+       pch = 16,
+       bty = "n") 
+
+# THIS LEGEND IS WRONG. 
+
+#### Multipanel Plots ####
+# 1. Plot a frequency distribution of male longevity for all treatment groups separately. 
+# In this plot, how easy is it to visualize differences among treatments in the distributions?
+par(mfrow = c(1, 5))
+
+hist(fruitflies$longevity.days[fruitflies$treatment == "1 pregnant female"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "1 virgin female"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "8 pregnant females"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "8 virgin females"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "no females added"])
+
+# 2. Repeat the previous command but stack the panels one above the other. Consider on how this affects 
+# your ability to compare the distributions among treatments compared with side-by-side plots.
+
+par(mfrow = c(5, 1))
+
+hist(fruitflies$longevity.days[fruitflies$treatment == "1 pregnant female"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "1 virgin female"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "8 pregnant females"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "8 virgin females"])
+hist(fruitflies$longevity.days[fruitflies$treatment == "no females added"])
+
+# Much easier to see when they're stacked. 
+
+# 3. Create a panel of scatter plots showing the relationship between male longevity and male size 
+# (as measured by thorax length) separately for each treatment group. Compare this with the previous 
+# exercise in which all points were placed on the same scatter plot with different symbols. 
+# Which is more revealing
+
+par(mfrow = c(5,1))
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "1 pregnant female"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "1 pregnant female"],
+     pch = 16,
+     col = "blue", 
+     ylim = c(0, 100), 
+     xlim = c(0.5, 1))
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "1 virgin female"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "1 virgin female"],
+     pch = 16, 
+     col = "red")
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "8 pregnant females"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "8 pregnant females"], 
+     pch = 16, 
+     col = "green")
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "8 virgin females"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "8 virgin females"],
+     pch = 16,
+     col = "purple")
+
+plot(fruitflies$longevity.days[fruitflies$treatment == "no females added"] ~ 
+       fruitflies$thorax.mm[fruitflies$treatment == "no females added"], 
+     pch = 16, 
+     col = "black")
+
