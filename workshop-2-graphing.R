@@ -286,8 +286,6 @@ legend("topleft",
        pch = 16,
        bty = "n") 
 
-# THIS LEGEND IS WRONG. 
-
 #### Multipanel Plots ####
 # 1. Plot a frequency distribution of male longevity for all treatment groups separately. 
 # In this plot, how easy is it to visualize differences among treatments in the distributions?
