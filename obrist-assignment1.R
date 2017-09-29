@@ -1,4 +1,4 @@
-# Assignment #1: Remake a poor graph in R.
+# Assignment #1: Improve a published graph in R.
 
 # Data from Figure 4 in Price et al., 2013 - Prey Selectivity of Fraser River Sockeye 
 # Salmon during Early Marine Migration in British Columbia
@@ -6,7 +6,7 @@
 # Data obtained by extracting points from graph using a free web plot digitizer app: 
 # http://arohatgi.info/WebPlotDigitizer/app/?
 
-# Read in data: 
+# Read in data as it was obtained from plot digitizer: 
 data.2009  <- read.csv("data-raw/price-2009.csv")
 data.2010 <- read.csv("data-raw/price-2010.csv")
 
@@ -40,11 +40,17 @@ plot(data$foraging_success ~ data$migration_day,
      cex.lab = 1.2, # make axis labels bigger
      las = 1, # turn axis tick labels horizontally
      xlim = c(5, 50), # make x and y limits based on ranges determined above
-     ylim = c(0, 7))
+     ylim = c(0, 7), 
+     bty = "l") # include only x and y axis lines (remove top and right lines)
+
 
 # Add linear regression line:
 abline(lm(data$foraging_success ~ data$migration_day))
 
+# Look at linear model summary, add p-value to plot.
+summary(lm(data$foraging_success ~ data$migration_day))
+
+text(x = 48, y = 0.2, label = "p = 0.36")
 
 # Make plot with points for 2009 to start.
 plot(data$foraging_success[data$year == 2009] ~ data$migration_day[data$year == 2009], 
@@ -55,7 +61,8 @@ plot(data$foraging_success[data$year == 2009] ~ data$migration_day[data$year == 
      cex.lab = 1.2, # make axis labels bigger
      las = 1, # turn axis tick labels horizontally
      xlim = c(5, 50), # make x and y limits based on ranges determined above
-     ylim = c(0, 7))
+     ylim = c(0, 7),
+     bty = "l") # remove top and right lines from plot.
 
 # Add linear regression line for 2009, make it black.
 abline(lm(data$foraging_success[data$year == 2009] ~ 
@@ -74,8 +81,10 @@ abline(lm(data$foraging_success[data$year == 2010] ~
        lwd = 1)
 
 # Add a legend to show which colours correspond to which years.
-legend("topright",
-       c("2009", "2010"),
-       col = c("black", "gray"),
-       pch = 16,
-       bty = "n")
+legend("topright", # where to put legend
+       c("2009", "2010"), # what should be labelled
+       col = c("black", "gray"), # corresponding colors
+       pch = 16, # type of point
+       bty = "n") # no box around legend (minimize ink)
+
+
