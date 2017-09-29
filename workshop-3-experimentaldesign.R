@@ -188,3 +188,83 @@ for(i in 1:10){
 t
 
 # You only need ~ 20 female spiders to give confidence intervals of less than 0.4.
+
+#### Plan for Power #### 
+# 1. Sample 20 females from a population in which the true fraction of "successes" 
+# is 0.7
+
+spiders2 <- sample(c("same_sp","dif_sp"), size= 20, replace=TRUE, prob=c(.7, .3))
+
+# 2. Apply the binomial test to your sample, to test the null hypothesis that the 
+# population proportion is 0.5. The binomial test calculates the exact 
+# 2-tailed probability of a result as extreme or more extreme as that observed 
+# if the null hypothesis is true. The method is implemented in R in the following 
+# command,
+
+z <- binom.test(length(spiders2[spiders2 == "same_sp"]), 
+                length(spiders2), 
+                p = 0.5)
+
+# x = observed number of successes in your sample from step 1,
+# n = sample size. 
+# z = object that stores the result. 
+# To see the results of the test enter print(z) or just z in the command line.
+
+z
+
+# If you just want to see the resulting P-value of the test, enter
+z$p.value
+
+# Did you reject the null hypothesis? - Yes
+
+# 3. Create a loop to repeat steps 1 and 2 ten times. 
+# In what fraction of iterations was the null hypothesis rejected?
+
+t <- matrix(0, 10, 2)
+
+for(i in 1:10){
+  spiders2 <- sample(c("same_sp","dif_sp"), size= 20, replace=TRUE, prob=c(.7, .3))
+  z <- binom.test(length(spiders2[spiders2 == "same_sp"]), 
+                  length(spiders2), 
+                  p = 0.5)
+  t[i, ] <- c(z$estimate, z$p.value)
+}
+
+t
+
+# 4. By modifying the sample size and re-running the loop multiple times, 
+# find a sample size (ballpark, no need to be exact at this point) that usually results 
+# in the null hypothesis being rejected. Compare your results to those from the 
+# confidence interval simulation above.
+
+t <- matrix(0, 10, 2)
+
+for(i in 1:10){
+  spiders2 <- sample(c("same_sp","dif_sp"), size = 50, replace=TRUE, prob=c(.7, .3))
+  z <- binom.test(length(spiders2[spiders2 == "same_sp"]), 
+                  length(spiders2), 
+                  p = 0.5)
+  t[i, ] <- c(z$estimate, z$p.value)
+}
+
+t
+
+# 5. Is the sample size you determined feasible in an experiment? 
+# If the answer is yes, great! If the answer is no, because the sample size required 
+# is too large, then you have some decisions to make. You could decide not to run the 
+# experiment after all. Or, you could revise your aims. Perhaps your committee would 
+# be happy if you if you could detect a preference of 0.8 instead of 0.7.
+
+#### Optional Power-tools in R ####
+
+# 1. Use the pwr package to calculate the approximate minimum sample size needed to 
+# detect a preference of 0.6 with a power of 0.80 (i.e., the null hypothesis 
+# would be rejected in 80% of experiments). The null hypothesis is that the population 
+# proportion p of females who would choose the male from her own population is 0.5. 
+# The goal is to design an experiment that has a high probability of rejecting the 
+# null hypothesis when p is 0.6.
+
+
+# 2. Repeat the above procedure for a preference of 0.7, 0.8, and 0.9.
+
+# 3. Use a line plot (see the "display" tab on the R tips page) to plot the relationship between minimum sample sizes and the different values of p for the case of power = 0.80. Are the sample sizes realistic?
