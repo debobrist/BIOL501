@@ -1,5 +1,7 @@
 # Fitting linear mixed effects models: 
 
+#### Flycatchers ####
+
 # 1. Read the data from the file.
 flycatchers <- read.csv("data-raw/flycatcher.csv")
 
@@ -100,6 +102,7 @@ r # 0.776
 # (predicted) values).
 
 plot(mod1)
+head(flycatchers)
           
 stripchart(flycatchers$patch ~ flycatchers$year, 
            vertical = TRUE, 
@@ -141,7 +144,7 @@ interaction.plot(x.factor = goldfish$wavelength,
 # analyzed the same way as a randomized complete block design (think of 
 # the individual fish as “blocks”).
 
-
+#### Goldfish ####
 # Fit linear mixed effects model to goldfish data:
 
 # 1. Fit a linear mixed-effects model to the data.
@@ -206,8 +209,127 @@ summary(mod2)
 
 # 7. Generate the model-based estimates of the mean sensitivities for each 
 # wavelength.
-
+library(lsmeans)
+lsmeans(mod2, "wavelength", data = goldfish)
 
 # 8. Generate the ANOVA table for the lme object. What effects are tested 
 # here, the random effects or the fixed effects? Interpret the ANOVA 
 # results.
+anova(mod2)                    # for sequential testing
+anova(mod2, type = "marginal") # for drop-one testing
+
+# This is testing the fixed effects, and is saying that the alternate hypothesis:
+# the effect of wavelength on sensitivity, is significant. (As opposed to the null
+# that wavelength does not effect sensitivity)
+
+#### Kluane ####
+
+# Read and examine the data
+
+# 1. Read the data from the file.
+kluane <- read.csv("data-raw/kluane.csv")
+head(kluane)
+
+# 2. Inspect the first few lines of data. Plot and treatment are self-explanatory. 
+# Treatment is given as a single variable with four levels (let’s stick with this 
+# approach rather than model as two variables, enclosure and fertilizer, with a 2×2 factorial design). 
+# Duration indicates whether the half-plots received the treatment for the 
+# full 20 years or whether the treatment was stopped (“reversed”) after 10 years. 
+# The variable “phen.ach” is the concentration of phenolics in yarrow.
+
+# 3. What type of experimental design was used?* This will determine the linear mixed model to 
+# use when fitting the data.
+
+# The experiment used a split-plot design, in which whole plots were randomly assigned different 
+# treatments, and then different levels of a second treatment (duration) were assigned to plot halves.
+
+# 4. Contemplate for a minute how you would draw a graph to illustrate the concentrations 
+# of phenolics in yarrow in the different treatments and durations. 
+# This might represent one case in which it is easier first to fit the model and then use 
+# visreg to help visualize the data and model fit at the same time (we do this below). 
+# Here’s what I came up with; have a look and see what you think. Ideally, I would add further 
+# commands to join points from the two sides of the same plot with a short line segment.
+
+stripchart(log(phen.ach) ~ treatment, 
+           vertical = TRUE, 
+           data = kluane, 
+           method ="jitter", 
+           pch = "")
+
+points(log(phen.ach) ~ c(as.numeric(treatment) - 0.1), 
+       data = subset (kluane, duration == "permanent"), 
+       pch = 16)
+
+points(log (phen.ach) ~ c(as.numeric(treatment) + 0.1), 
+       data = subset (kluane, duration == "reverse"),
+       pch=1)
+
+
+# Fit a linear mixed-effects model
+
+# 1. Fit a linear mixed model to the data without an interaction between treatment and duration. 
+# Use the log of phenolics as the response variable, as this improved fit to assumptions. 
+# Visualize the model fit to the data.
+mod3 <- lme(log(phen.ach) ~ treatment + duration, random = ~1|plot, data = kluane)
+
+points(fitted(mod3) ~ c(as.numeric(treatment) - 0.1), 
+       data = subset (kluane, duration == "permanent"), 
+       pch = 16)
+
+summary(mod3)
+
+points(fitted(mod3) ~ treatment,
+       data = kluane,
+       pch = "---",
+       cex = 5,
+       col = "seagreen")
+
+# 2. Now repeat the model fitting, but this time include the interaction between treatment and duration. 
+# Visualize the model fit to the data. What is the most noticeable difference between the two model fits, 
+# one with the interaction and the other without? Describe what including the interaction term “allows” 
+# that the model without an interaction term does not. Which model appears to fit the data best?
+
+mod4 <- lme(log(phen.ach) ~ treatment * duration, random = ~1|plot, data = kluane) 
+summary(mod4)
+
+points(fitted(mod4) ~ treatment, 
+       data = kluane,
+       pch = "-",
+       cex = 5, 
+       col = "coral")
+
+# 3 Check the residuals in relation to the fitted values to investigate a key assumption of linear 
+# mixed models.
+
+plot(mod3)
+plot(mod4)
+
+# 4. Extract the parameters from the fitted model object. In the output generated, you will see two 
+# quantities given for “StdDev” under the label “Random effects”. Explain what these quantities refer to.
+
+summary(mod4)
+# the (Intercept) term explains variation between different plots, and the Residual term explains
+# variation within each plot, above the variation explained by the different treatments taking place on 
+# that same plot. Eg. Maybe plot 1 receives slighly more sun on the north side than the south side.
+
+# 5. Generate the ANOVA table for the fixed effects. Summarize the conclusions that may be drawn from
+# the results. By default, lme will fit the model terms sequentially rather than use the “drop one” approach. 
+# Repeat the ANOVA table using “drop one” fits instead. Are the results any different? Which method is 
+# preferred?
+
+anova(mod4)
+anova(mod4, type = "marginal")
+
+# The F-value is higher when fitting model terms sequentially than 
+# using the "drop one" approach. 
+
+# https://stat.ethz.ch/pipermail/r-sig-ecology/2011-January/001851.html
+
+# 6. (Optional: Break the single treatment variable into two variables, one 
+# for fertilizer treatment and one for exclosure treatment. This takes 
+# advantage of the 2×2 design of these factors, and allows interactions 
+# between the two treatments to be investigated. Fit a new, linear mixed 
+# model to the data and describe the results.)
+
+unique(kluane$treatment)
+head(kluane)

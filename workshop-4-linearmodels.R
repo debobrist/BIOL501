@@ -191,3 +191,182 @@ anova(k)
 library(lsmeans)
 lsmeans(k, "treatment")
 
+# Because these are the least squared means based on the fitted model. The model fits
+# the model where there is the smallest squared distance between observed and fitted values.
+
+#### Part 3 ####
+# Fruitflies data: The linear model will have longevity as the response variable, 
+# and two explanatory variables: treatment (categorical) and thorax length (numerical; 
+# representing body size). The goal will be to compare differences in fly longevity 
+# among treatment groups, correcting for differences in thorax length. Correcting for
+# thorax length will possibly improve the estimates of treatment effect. The method is 
+# also known as analysis of covariance, or ANCOVA.
+
+# 1. Read data: 
+
+fruitflies <- read.csv("data-raw/fruitflies.csv")
+
+# 2. View the first few lines of data to make sure it was read correctly.
+
+head(fruitflies)
+
+# 3. Determine whether the categorical variable “treatment” is a factor. If not a factor, 
+# convert treatment to a factor. This will be convenient when we fit the linear model.
+
+class(fruitflies$treatment) # it is a factor.
+
+# 4. Use the “levels” command on the factor variable “treatment” to see how R has 
+# ordered the different treatment groups (should be alphabetically).
+
+levels(fruitflies$treatment)
+
+# 5. Change the order of the categories so that a sensible control group is first in 
+# the order of categories. Arrange the order of the remaining categories as you see fit.
+fruitflies$treatment <- factor(fruitflies$treatment, 
+                     levels = c("no females added",
+                                "1 virgin female",
+                                "8 virgin females",
+                                "1 pregnant female", 
+                                "8 pregnant females"))
+
+# Optional: This repeats an exercise from the graphics workshop. Create a scatter plot, 
+# with longevity as the response variable and body size (thorax length) as the 
+# explanatory variable. Use a single plot with different symbols (and colors too, 
+# if you like) for different treatment groups. Or make a multipanel plot using the 
+# lattice or ggplot2 package
+names(fruitflies)
+plot(longevity.days ~ thorax.mm, 
+     data = fruitflies, 
+     col = treatment)
+
+library(ggplot2)
+library(cowplot)
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(size = 2)
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(data = subset(fruitflies, treatment == "no females added"))
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(data = subset(fruitflies, treatment == "1 virgin female"))
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(data = subset(fruitflies, treatment == "8 virgin females"))
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(data = subset(fruitflies, treatment == "1 pregnant female"))
+
+ggplot(fruitflies, aes(x = thorax.mm, y = longevity.days, color = treatment))+
+  geom_point(data = subset(fruitflies, treatment == "8 virgin females"))
+
+
+# Fit a linear model
+
+# 1. Fit a linear model to the fly data, including both body size (thorax length) and 
+# treatment as explanatory variables. Place thorax length before treatment in the model 
+# formula. Leave out the interaction term for now — we’ll assume for now that there is 
+# no interaction between the explanatory variables thorax and treatment.
+
+flymod1 <- lm(longevity.days ~ thorax.mm + treatment, data = fruitflies)
+
+# 2. Use plot to check whether the assumptions of linear models are met in this case. 
+# Are there any potential concerns? If you have done the analysis correctly, you will 
+# see that the variance of the residuals is not constant, but increases with increasing 
+# fitted values. This violates the linear model assumption of equal variance of residuals.
+
+par(mfrow = c(2, 2))
+plot(flymod1)
+
+# data appears heteroscedastic - no constant variance of residuals
+
+# 3. Attempt to fix the problem identified in step (3) using a log-transformation of the
+# response variable. Refit the model and reapply the graphical diagnostic tools to check 
+# assumptions. Any improvements? (To my eye the situation is improved but the issue has 
+# not gone away entirely.) Let’s continue anyway with the log-transformed analysis.
+
+flymod2 <- lm(log(longevity.days) ~ thorax.mm + treatment, data = fruitflies)
+plot(flymod2) # better but not great
+
+# 4. Visualize the fit of the model to the data using the visreg package. Try two 
+# different possibilities. In the first, plot the fit of the response variable to thorax 
+# length separately for each treatment group. In the second, plot the fit of the data to 
+# treatment, conditioning on the value of the covariate (thorax length).
+par(mfrow = c (1, 1))
+
+library(visreg)
+
+# In separate plots
+visreg(flymod2, xvar = "thorax.mm", by = "treatment", whitespace = 0.4, 
+       points.par = list(cex = 1.1, col = "red"))
+
+# All in one plot!
+visreg(flymod2, xvar = "thorax.mm", by = "treatment", whitespace = 0.5, overlay = TRUE, 
+       band = FALSE, points.par = list(cex = 1.1))
+
+visreg(flymod2, xvar = "treatment", by = "thorax.mm", whitespace = 0.5, overlay = TRUE, 
+       band = FALSE, points.par = list(cex = 1.1))
+
+# 5. Obtain the parameter estimates and standard errors for the fitted model. 
+# Interpret the parameter estimates. What do they represent*? Which treatment group 
+# differs most from the control group?
+summary(flymod2)
+
+# treatment with 8 virgin females differs most from the control group. You can see this
+# in the plot above as well. 
+
+# 6. Obtain 95% confidence intervals for the treatment and slope parameters.
+
+confint(flymod2)
+
+# 7. Test overall treatment effects with an ANOVA table. Interpret each significance 
+# test — what exactly is being tested?
+
+anova(flymod2)
+# Thorax length has a statistically significant effect on longevity, and so does treatment.
+# These explanatory variables are being tested against the null hypothesis that they
+# do not affect longevity. 
+
+# 8. Refit the model to the data but this time reverse the order in which you entered 
+# the two explanatory variables in the model. Test the treatment effects with an ANOVA 
+# table. Why isn’t the table identical to the one from your analysis in (7)**?
+
+flymod3 <- lm(longevity.days ~ treatment + thorax.mm, data = fruitflies)
+anova(flymod3)
+
+# model terms are being fit sequentially. 
+
+# 9. Our analysis so far has assumed that the regression slopes for different treatment
+# groups are the same. Is this a valid assumption? We have the opportunity to investigate
+# just how different the estimated slopes really are. To do this, fit a new linear model 
+# to the data, but this time include an interaction term between the explanatory 
+# variables.
+
+flymod4 <- lm(longevity.days ~ thorax.mm * treatment, data = fruitflies)
+
+# 10. The parameters will be more complicated to interpret in the model including an 
+# interaction term, so lets skip this step. Instead, go right to the ANOVA table to test
+# the interaction term using the new model fit. Interpret the result. Does it mean 
+# that the interaction term really is zero?
+
+anova(flymod4) # Interaction not statistically significant.
+
+# 11. Another way to help assess whether the assumption of no interaction is a sensible 
+# one for these data is to determine whether the fit of the model is “better” when an 
+# interaction term is present or not, and by how much. We will learn new methods later 
+# in the course to determine this, but in the meantime a simple measure of model fit 
+# can be obtained using the adjusted R2 value. The ordinary R2 measures the fraction of 
+# the total variation in the response variable that is “explained” by the explanatory 
+# variables. This, however, cannot be compared between models that differ in the number 
+# of parameters because fitting more parameters always results in a larger R2, even if 
+# the added variables are just made-up random numbers. To compare the fit of models 
+# having different parameters, use the adjusted R2 value instead, which takes account 
+# of the number of parameters being fitted. Use the summary command on each of two fitted
+# models, one with and the other without an interaction term, and compare their adjusted 
+# R2 values. Are they much different? If not, then maybe it is OK to assume that any 
+# interaction term is likely small and can be left out.
+
+summary(flymod3) # R-squared is ~ 0.65
+summary(flymod4) # R-squared is 0.65
+
+# It is probably safe to assume that the interaction is not important.
