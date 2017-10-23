@@ -1,3 +1,5 @@
+#### Sparrows ####
+
 # Read and examine the data
 # 
 # 1. Read the data from the file and inspect the first few lines to make sure 
@@ -132,10 +134,105 @@ confint(z, level = 0.95)
 # accurate method to test the null hypothesis of zero slope.
 
 summary(z)
-# 
+
+# Note that P-values in the summary() output are based on a normal approximation and are 
+# not accurate for small to moderate sample sizes -- use the log likelihood ratio test 
+# instead (see below).
+
+anova(z, test = "Chisq")
 
 # 10. If time permits, add year to your logistic regression model (make sure that year
 # is a categorical variable in your data set). Never mind the interaction between year
 # and tarsus length. Plot the resulting curves. Is there any evidence of a difference 
 # among years in the relationship between survival and tarsus length in these data? Use 
 # lsmeans to calculate the model estimates of mean survival in each year.
+
+
+#### Horseshoe Crabs ####
+
+# 1. Read the data from the file. View the first few lines of data to make sure it was 
+# read correctly. Use the str command to see the variables and groups.
+
+crabs <- read.csv("data-raw/satellites.csv", stringsAsFactors = F)
+str(crabs)
+
+# 2. Plot the number of satellites against the width of the carapace, a measure of 
+# female body size. Fit a smooth curve to examine the trend.
+plot (nsatellites ~ width.cm, 
+      data = crabs,
+      pch = 16)
+
+lines(lowess (crabs$width.cm, crabs$nsatellites))
+
+# Fit a generalized linear model
+
+# 1. Fit a model to the relationship between the number of satellites and the width 
+# of the female carapace. What type of variable is the number of satellites? 
+# What probability distribution might be appropriate to describe the error distribution 
+# around a model fit? What is the appropriate link function?
+
+z1 <- glm (nsatellites ~ width.cm, family = poisson (link="log"), data = crabs)
+
+hist(crabs$nsatellites) 
+
+# 2. Fit a generalized linear model to the relationship between number of satellite 
+# males and female carapace width. Use visreg to examine the relationship on the 
+# transformed scale, including confidence bands. Don’t worry about the data points 
+# (they are “working values” for the response variable from the last iteration of model 
+# fitting, which glm uses behind the scenes to fit the model on the transformed scale).
+
+library(visreg)
+visreg(z1)
+
+
+# 3. Plot the data on the original scale, and add the glm model fit to your plot. 
+# Why is it curvilinear?
+
+plot(crabs$nsatellites ~ crabs$width.cm, 
+     xlab = "carapace width (cm)",
+     ylab = "number of satellites",
+     pch = 16)
+
+yhat1 <- fitted(z1)
+
+lines(yhat1[order(crabs$width.cm)] ~ crabs$width.cm[order(crabs$width.cm)])
+
+zhat1 <- predict(z1, se.fit = TRUE)       # result on logit or log scale
+zupper1 <- zhat1$fit + 1.96 * zhat1$se.fit
+zlower1 <- zhat1$fit - 1.96 * zhat1$se.fit
+
+yupper1 <- exp(zupper1)                   # for log link
+ylower1 <- exp(zlower1)
+
+lines(yupper1[order(crabs$width.cm)] ~ crabs$width.cm[order(crabs$width.cm)], lty = 2)
+lines(ylower1[order(crabs$width.cm)] ~ crabs$width.cm[order(crabs$width.cm)], lty = 2)
+
+# 4. Extract the estimated regression coefficients from your model object. What is the
+# interpretation of these coefficients? On a piece of paper, write down the complete 
+# formula for your fitted model.
+
+coef(z1)
+
+# These are the coefficients for the linear model fit in the imaginary predictor scale. 
+# y = -3.03047572 + 0.1640451 * x
+
+# 5. Calculate the likelihood-based 95% confidence interval for the regression 
+# coefficients. The most useful estimate is that for the slope, since exp(slope) 
+# represents the multiple to the response variable accompanying a 1-unit change 
+# in the explanatory variable. Convert the lower and upper confidence limits for 
+# the slope to the original scale to obtain the confidence interval for the multiple.
+
+
+# 6. Test the relationship between number of satellite males and female carapace width. Notice how small the P-value is for the null hypothesis test for the slope. I’m afraid that this is a little optimistic. Why? Read on.
+
+# 7. When you extracted the regression coefficients from your model object, you probably saw the following line of output: “(Dispersion parameter for poisson family taken to be 1)”. What are we really assuming here?
+
+# 8. If you did not want to rely on this assumption (or you wanted to estimate the dispersion parameter), what option is available to you? Refit a generalized linear model without making the assumption that the dispersion parameter is 1. Save the results in a new glm object so that you can compare your results with the previous fit.
+
+# 9. Extract and examine the coefficients of the new glm model object. Examine the estimated dispersion parameter. Is it close to 1? On this basis, which of the two glm fits to the same data would you regard as the more reliable?
+
+# 10. How do the regression coefficients of this new fit compare with the estimates from the earlier model fit? How do the standard errors compare? Why are they larger this time?
+
+# 11. Compare the visreg plot of the current model to that of the earlier fit. What difference do you notice?
+
+# 12. Redo the test of significance for the slope of the relationship between number of satellite mates and female carapace width. Remember to use the F test rather than the likelihood ratio test in the anova command. How do the results compare with those from the previous fit?
