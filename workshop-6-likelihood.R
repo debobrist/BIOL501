@@ -203,6 +203,7 @@ summary(flowers$hand)
 # Expected MLE: 6/27
 
 loglik.flowers <- dbinom (6, 27, p = p, log = TRUE)
+?dbinom
 
 flowers2 <- data.frame(Proportion = p, Loglikelihood = loglik.flowers)
 

@@ -100,6 +100,8 @@ visreg(z, xvar = "tarsus", ylim = range(sparrows$survival), scale = "response") 
 points(jitter(sparrows$survival, amount = 0.02) ~ sparrows$tarsus,
        pch = 16)
 
+visreg(z)
+?visreg
 
 # 6. Use the coefficients to calculate the predicted survival probability of a song 
 # sparrow having tarsus length 20.5 mm*. Does the result agree with your plot of the 
@@ -221,6 +223,11 @@ coef(z1)
 # represents the multiple to the response variable accompanying a 1-unit change 
 # in the explanatory variable. Convert the lower and upper confidence limits for 
 # the slope to the original scale to obtain the confidence interval for the multiple.
+
+library(MASS)
+confint(z1, level = 0.95)
+
+exp(coef(z1)[2])
 
 
 # 6. Test the relationship between number of satellite males and female carapace width. Notice how small the P-value is for the null hypothesis test for the slope. I’m afraid that this is a little optimistic. Why? Read on.
