@@ -128,5 +128,84 @@ w <- L/sum(L)                     # Akaike weights
 
 
 
-
 #### Bird abundance ####
+
+birds <- read.csv ("data-raw/birdabund.csv")
+
+# 1. Using histograms, scatter plots, or the pairs command, explore the frequency 
+# distributions of the variables. Several of the variables are highly skewed, 
+# which will lead to outliers having excessive leverage. Transform the highly skewed 
+# variables to solve this problem. (I log-transformed area, dist and ldist. The results 
+# are not perfect.)
+
+names (birds)
+hist (birds$abund)
+hist (birds$area)
+hist (birds$yr.isol)
+hist (birds$dist)
+
+plot (birds$abund ~ log(birds$dist))
+
+plot (birds$abund ~ log(birds$area))
+
+plot (birds$abund ~ log(birds$ldist))
+
+plot (birds$abund ~ birds$graze)
+
+birds$logarea <- log(birds$area)
+birds$logdist <- log(birds$dist)
+birds$logldist <- log(birds$ldist)
+
+# 2. Use the cor command to estimate the correlation between pairs of explanatory 
+# variables. The results will be easier to read if you round to just a couple of 
+# decimals. Which are the most highly correlated variables?
+
+round (cor (birds), 2)
+
+# graze and year are highly correlated, 
+# graze and abundance are highly correlated,
+# abundance and log area are highly correlated
+
+
+# 3. Using the model selection tool “all subsets regression”, determine which linear 
+# model best predicts bird abundance. Ignore interactions. (Note: Make sure you include 
+# the names= option in your leaps command, because a later step requires it.)
+
+library (leaps)
+
+x <- birds [ , c(3, 6, 7, 8, 9, 10)]
+
+z <- leaps (x, birds$abund, names = names (x))   # note that x comes before y
+
+vars <- which (z$which [i, ])  # id variables of best model - years, graze, and logarea.
+
+
+# 4. Plot Mallow’s Cp against p (number of predictors, including the intercept). 
+# How many predictors does the best model have*?
+
+plot (z$size, z$Cp)          
+# The best model has 3 predictors.
+
+# 5. Are there other acceptable models (have Cp < p)?
+
+lines(z$size, z$size) 
+# Yes, there are 5 or 6 other models that have Cp < p.
+
+# 6. Use a linear model to fit the “best” model to the data. Produce a summary of the 
+# results. Use visreg to visualize the relationship between bird abundance and each of
+# the three variables in the “best” model (use the xvar= argument to choose which 
+# variable to plot; the resulting plot is of the relationship between abundance and 
+# that variable, holding the other variables constant). Which variable has the strongest 
+# relationship with bird abundance in this model?
+
+bird.mod1 <- lm (birds$abund ~ birds$logarea + birds$graze + birds$yr.isol)
+
+summary(bird.mod1)
+
+# 7. Run leaps2aic (See the model selection section on the “Fit model” help page) to calculate AIC and other quantities of interest. Save the results in an object (the function will create a data frame).
+
+# 8. Using the results from (7), which model minimized AICc?
+
+# 9. In a new data frame, keep only those cases for which the difference in AICc is less than 10. How many models were retained**?
+
+# 10. Using the AICc values, calculate the Akaike weights of all the models retained. How much weight is given to the best model***? Are there common features shared among the models having the highest weights?
