@@ -1,6 +1,8 @@
 # Script for DR in Quantitative Methods - Assignment 2
 # Debora Obrist
 
+#### Read data, clean ####
+
 # Read in data from: Are there indirect fitness benefits of female extra-pair reproduction? 
 # Lifetime reproductive success of within-pair and extra-pair offspring
 # by Sardell, R.J., Arcese, P., Keller, L.F. & Reid, J.M. 
@@ -23,7 +25,7 @@ sosp$epstatus <- as.factor (sosp$epstatus)
 sosp$sex[sosp$sex == 1] <- 0
 sosp$sex[sosp$sex == 2] <- 1
 
-# Visualize data:
+#### Visualize data: ####
 
 # First, look at LRShatched ~ epstatus:
 par (bty = "l")
@@ -57,6 +59,7 @@ axis (1,
       at = 1:2, 
       labels = c("female", "male"))
 
+#### Determining what model to use: ####
 # First, determine what type of linear model is most appropriate. 
 
 # What happens if you just fit a multiple linear regression model? 
@@ -96,7 +99,7 @@ var  (sosp$LRShatched) # 30.71
 mean (sosp$LRShatched) # 1.77
 
 
-# Fit model: 
+#### Fit models: ####
 
 # sospmod1 <- glmer (sosp$LRShatched ~ sosp$epstatus + sosp$sex + (1 | sosp$parentpairID) + (1|sosp$broodcode) + (1 | as.factor (sosp$natalyr)), 
 #                         family = negative.binomial (link = "log"))
@@ -119,7 +122,6 @@ summary (sospmod2)
 
 # Dispersion parameter for quasipoisson family taken to be 16.51793 - definitely overdispersed!
 
-# Is this the best model?
 
 # What if sex isn't important in determining lifetime reproductive success, 
 # only epstatus?
@@ -139,6 +141,7 @@ sospmod4 <- glm (LRShatched ~ sex,
 sospmod.null <- glm (LRShatched ~ 1,
                  family = quasipoisson (link = "log"),
                  data = sosp)
+#### Model selection ####
 
 # Let's compare these models using an AIC framework:
 x <- c (AIC (sospmod.null), AIC (sospmod2), AIC (sospmod3), AIC (sospmod4))
@@ -194,6 +197,9 @@ aic.table
 # It is more than 2 delta AIC units better than the next top model, 
 # sospmod3.p (epstatus only)
 
+
+#### Parameter estimates: #### 
+
 # I'm now going to go back to using sospmod2 - the version of the full model with 
 # quasipoisson distribution. Again, this model essentially the same as the one I just
 # determined to be the best, but more conservative with it's error estimates because of the
@@ -223,8 +229,13 @@ exp(coef (sospmod2)[1] + coef (sospmod2)[2] * 1 + coef (sospmod2)[3] * 1)
 # Male, within-pair
 exp(coef (sospmod2)[1] + coef (sospmod2)[2] * 0 + coef (sospmod2)[3] * 1)
 
+#### Test for statistical significance: ####
 
-# Visualize fit:
+# Test for statistical significance: 
+# Dolph recommends this method for models with quasipoisson link functions:
+anova(sospmod2, test = "F")
+
+#### Visualize fit of best model: ####
 stripchart (sosp$LRShatched ~ sosp$epstatus,
             vertical = TRUE,
             xlab = "status",
