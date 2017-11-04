@@ -16,15 +16,22 @@ sosp$epstatus <- as.factor (sosp$epstatus)
 # Visualize data:
 
 # First, look at LRShatched ~ epstatus:
+par (bty = "l")
+
 stripchart (sosp$LRShatched ~ sosp$epstatus,
             vertical = TRUE,
             xlab = "status",
             ylab = "number of offspring hatched",
             pch = 16,
             method = "jitter",
-            xaxt = "n")
+            xaxt = "n",
+            cex.lab = 1.5,
+            cex.axis = 1.25)
 
-axis (1, at = 1:2, labels = c("within-pair young", "extra-pair young"))
+axis (1, 
+      at = 1:2, 
+      labels = c("within-pair young", "extra-pair young"), 
+      cex.lab = )
 
 # Next, look at LRShatched ~ sex:
 stripchart (sosp$LRShatched ~ sosp$sex,
@@ -33,17 +40,24 @@ stripchart (sosp$LRShatched ~ sosp$sex,
             ylab = "number of offspring hatched",
             pch = 16,
             method = "jitter",
-            xaxt = "n")
+            xaxt = "n",
+            cex.lab = 1.5,
+            cex.axis = 1.25)
 
-axis (1, at = 1:2, labels = c("female", "male"))
+axis (1, 
+      at = 1:2, 
+      labels = c("female", "male"))
 
 # Next, look at LRShatched ~ year:
 stripchart (sosp$LRShatched ~ sosp$natalyr,
             vertical = TRUE,
-            xlab = "sex",
+            xlab = "year",
             ylab = "number of offspring hatched",
+            las = 2,
             pch = 16,
-            method = "jitter")
+            method = "jitter",
+            cex.lab = 1.5,
+            cex.axis = 1)
 
 
 # Load required packages: 
@@ -121,3 +135,5 @@ ylower1 <- exp (zlower1)
 # Add lines to plot:
 lines (yupper1 [order(sosp$epstatus)] ~ sosp$epstatus [order (sosp$epstatus)], lty = 2)
 lines (ylower1 [order(sosp$epstatus)] ~ sosp$epstatus [order (sosp$epstatus)], lty = 2)
+
+
