@@ -109,10 +109,6 @@ mean (sosp$LRShatched) # 1.77
 # I will just fit a simple glm with explanatory variables I'm interested in - the extra-pair status, 
 # and sex of the bird.
 
-# Fit model with Poisson error distribution: 
-sospmod1 <- glm (LRShatched ~ epstatus + sex, 
-                 family = poisson (link = "log"), 
-                 data = sosp)
 
 # Fit model with quasipoisson error distribution to see if data overdispersed:
 sospmod2 <- glm (LRShatched ~ epstatus + sex, 
@@ -123,12 +119,91 @@ summary (sospmod2)
 
 # Dispersion parameter for quasipoisson family taken to be 16.51793 - definitely overdispersed!
 
+# Is this the best model?
+
+# What if sex isn't important in determining lifetime reproductive success, 
+# only epstatus?
+sospmod3 <- glm (LRShatched ~ epstatus, 
+                 family = quasipoisson (link = "log"), 
+                 data = sosp)
+
+# What if epstatus doesn't matter, and sex best explains variations in 
+# lifetime reproductive success?
+sospmod4 <- glm (LRShatched ~ sex,
+                 family = quasipoisson (link = "log"),
+                 data = sosp)
+
+# What if neither of these two are important, and the best model to explain 
+# lifetime reproductive success is the null model? This model tests the data in 
+# relation to the intercept - a straight line for the mean.
+sospmod.null <- glm (LRShatched ~ 1,
+                 family = quasipoisson (link = "log"),
+                 data = sosp)
+
+# Let's compare these models using an AIC framework:
+x <- c (AIC (sospmod.null), AIC (sospmod2), AIC (sospmod3), AIC (sospmod4))
+
+# Returns all NA values - apparently you can't calculate likelihood with quasi models,
+# and therefore, by definition, you can't calculate AIC. Since the only thing that changes
+# in the quasi model vs the regular Poisson is the variance, I'm going to make these same
+# 4 models with family = Poisson to see if one is better than the rest. 
+
+# Both explanatory variables:
+sospmod2.p <- glm (LRShatched ~ epstatus + sex, 
+                 family = poisson (link = "log"), 
+                 data = sosp)
+
+
+# epstatus only:
+sospmod3.p <- glm (LRShatched ~ epstatus, 
+                 family = poisson (link = "log"), 
+                 data = sosp)
+
+# sex only:
+sospmod4.p <- glm (LRShatched ~ sex,
+                 family = poisson (link = "log"),
+                 data = sosp)
+
+# null: 
+sospmod.null.p <- glm (LRShatched ~ 1,
+                     family = poisson (link = "log"),
+                     data = sosp)
+
+# Let's compare these models using an AIC framework:
+aic.table <- AIC (sospmod.null.p, sospmod2.p, sospmod3.p, sospmod4.p)
+
+x <- c (AIC (sospmod.null.p), AIC (sospmod2.p), AIC (sospmod3.p), AIC (sospmod4.p))
+
+# Calculate delta AICs:
+x <- c (AIC (sospmod.null.p), AIC (sospmod2.p), AIC (sospmod3.p), AIC (sospmod4.p))
+delta <- x - min(x)
+
+# Add to table: 
+
+aic.table$delta <- delta
+
+# Relative likelihoods of models:
+L <- exp(-0.5 * delta)   
+
+# Add Akaike weights to table:
+aic.table$weight <- L/sum(L)
+
+aic.table
+
+# So, sospmod2.p (with both sex and epstatus) has the most weight, so is the best model. 
+# It is more than 2 delta AIC units better than the next top model, 
+# sospmod3.p (epstatus only)
+
+# I'm now going to go back to using sospmod2 - the version of the full model with 
+# quasipoisson distribution. Again, this model essentially the same as the one I just
+# determined to be the best, but more conservative with it's error estimates because of the
+# overdispersed data.
+
 # See parameter estimates on log-scale:
 coef(sospmod2)
 
 # See back-transformed parameter estimates:
 exp(coef(sospmod2))
-
 
 # What do these parameter estimates mean, biologically? 
 
@@ -147,7 +222,6 @@ exp(coef (sospmod2)[1] + coef (sospmod2)[2] * 1 + coef (sospmod2)[3] * 1)
 # If epstatus = 0, and sex = 1, how many offspring? 
 # Male, within-pair
 exp(coef (sospmod2)[1] + coef (sospmod2)[2] * 0 + coef (sospmod2)[3] * 1)
-
 
 
 # Visualize fit:
