@@ -25,6 +25,9 @@ sosp$epstatus <- as.factor (sosp$epstatus)
 sosp$sex[sosp$sex == 1] <- 0
 sosp$sex[sosp$sex == 2] <- 1
 
+# Change sex into factor:
+sosp$sex <- as.factor (sosp$sex)
+
 #### Visualize data: ####
 
 # First, look at LRShatched ~ epstatus:
@@ -244,7 +247,7 @@ stripchart (sosp$LRShatched ~ sosp$epstatus,
             method = "jitter",
             xaxt = "n")
 
-axis (1, at = 1:2, labels = c ("within-pair young", "extra-pair young"))
+axis (1, at = 1:2, labels = c ("within-pair", "extra-pair"))
 
 # Use fitted() to generate the predicted values corresponding to data points on the original scale.
 yhat1 <- fitted (sospmod2)
@@ -267,4 +270,8 @@ ylower1 <- exp (zlower1)
 lines (yupper1 [order(sosp$epstatus)] ~ sosp$epstatus [order (sosp$epstatus)], lty = 2)
 lines (ylower1 [order(sosp$epstatus)] ~ sosp$epstatus [order (sosp$epstatus)], lty = 2)
 
+# It's difficult to see what's going on in this plot.
 
+# Use visreg to show instead:
+par (mfrow = c (1, 2))
+visreg (sospmod2, scale = "response")
