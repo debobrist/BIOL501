@@ -1,5 +1,6 @@
 # Workshop 9 - Bayesian Methods
 
+#### Elephants ####
 # 1. Using the hypergeometric distribution, calculate the likelihood of each of a range of 
 # possible values for the number of elephants in the Park. Note that the total number of 
 # elephants is n + m, and that m is known (m = 27). Note also that only integer values for
@@ -155,4 +156,87 @@ post.cumsum2 <- cumsum (post.ordered2)
 # Finally, find n corresponding to a cumulative posterior probability of 0.95. 
 range (n.ordered2 [post.cumsum2 <= 0.95]) + m
 
+
+
+#### Eukaryote diversity ####
+
+# 1. Download and read the data from the file.
+biodiv <- read.csv ("data-raw/biodiv.csv")
+
+# 2. Plot CO2 flux against number of species.
+plot (biodiv$co2flux ~ biodiv$species, 
+      pch = 16,
+      cex = 0.75,
+      bty = "l",
+      ylab = "CO2 flux",
+      xlab = "Number of species")
+
+# 3. Fit a simple linear regression to the data. Add the regression line to the plot. 
+# Judging by eye, is it a good fit?
+
+biodiv.mod1 <- lm ((biodiv$co2flux ~ biodiv$species)) 
+abline (biodiv.mod1)
+
+
+# 4. Fit a Michaelis-Menten model to the data. You'll need to use the version of the 
+# formula having a non-zero y-intercept. (Note: When I tried to fit the model to the data
+# the estimation process did not converge, perhaps because 2 rather than 0 or 1 is the 
+# smallest value for the explanatory variable. I had better luck when I used the number of
+# species minus 2 rather than number of species as the explanatory variable in the model 
+# formula). Add the fitted line to the plot. Judging by eye, is it a good fit?
+
+# y = a + bx/(c+x) Michaelis-Menten model when y-intercept is non-zero.
+biodiv.mod2 <- nls (biodiv$co2flux ~ a + b * (biodiv$species - 2) / (c + (biodiv$species - 2)), 
+                   data = biodiv, 
+                   start = list (a = -1000, b = 1, c = 2))
+
+summary (biodiv.mod2)
+
+lines (biodiv.mod2,
+        lwd = 2, 
+        col = "grey")
+
+# 5. Calculate BIC for both the linear and nonlinear models that you fit in (3) and (4)*.
+# Which hypothesis has the lowest BIC? Does this accord with your visual judgements of 
+# model fit?
+BIC (biodiv.mod1)
+BIC (biodiv.mod2)
+
+# The second model has a lower BIC. 
+
+# 6. Calculate the BIC differences for the two models, and then the BIC weights**.
+# These weights can be interpreted as Bayesian posterior probabilities of the models 
+# if both the linear and Michaelis-Menten models have equal prior probabilities, and if 
+# we assume that one of these two models is the "true" model. Of course, we can never 
+# know whether either of these models is "true", but we can nevertheless use the weights 
+# as a measure of evidence in support of both model, if we are considering only these two.
+
+x <- c(BIC(biodiv.mod1), BIC(biodiv.mod2)) # stores BIC values in a vector
+delta <- x - min(x)               # BIC differences
+L <- exp(-0.5 * delta)            # relative likelihoods of models
+w <- L/sum(L)                     # BIC weights
+w # The Michaelis-Menten model has 95% of the weight, so is the better model. 
+
+# 7. Compare the models using AIC instead of BIC. Do you get the same "best" model using 
+# this criterion instead?
+AIC (biodiv.mod1)
+AIC (biodiv.mod2)
+
+# The Michaelis-Menten model has a lower AIC.
+
+# 8. Which hypothesis about the role of biodiversity in ecosystem function receives 
+# strongest support from these data?
+
+
+
+# 9. Assuming that it were possible, would conventional null hypothesis significance 
+# testing be a poorer, equivalent, or superior approach to the one used above to decide
+# between the two models? Why?
+
+
+
+# 10. Will ecosystem respiration really reach an asymptote or might it continue to increase,
+# albeit at a slower and slower rate, as the number of species increases? The power 
+# function can be used to model the latter situation. Which function, the Michaelis-Menten
+# or the power function, has strongest support?
 
